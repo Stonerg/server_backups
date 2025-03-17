@@ -22,31 +22,29 @@ BACKUP_FILE = os.getenv("BACKUP_FILE")
 DRIVE_FOLDER_ID = os.getenv("DRIVE_FOLDER_ID") # Google Drive folder where backups will be stored
 
 def authenticate_google_drive():
-    """Authenticate with Google Drive API."""
+    """Authenticate and return a Google Drive service."""
     creds = None
 
-    # Load existing token if available
+    # Check if token.pickle exists and load it
     if os.path.exists(TOKEN_FILE):
         with open(TOKEN_FILE, 'rb') as token:
-            print("Loading existing credentials...")
             creds = pickle.load(token)
 
-    # If token is missing or expired, authenticate again
+    # If there's no valid credentials, use run_console to authenticate
     if not creds or not creds.valid:
-        print("Refreshing or generating new credentials...")
         if creds and creds.expired and creds.refresh_token:
             creds.refresh(Request())
         else:
+            # Use run_console to authenticate via command line
             flow = InstalledAppFlow.from_client_secrets_file(CREDENTIALS_FILE, SCOPES)
-            creds = flow.run_local_server(port=0)
+            creds = flow.run_console()  # This method uses the console for authentication
 
-  # Console-based authentication
-
-        # Save credentials for next use
+        # Save the credentials to a file for future use
         with open(TOKEN_FILE, 'wb') as token:
             pickle.dump(creds, token)
 
     return build('drive', 'v3', credentials=creds)
+
 
 def backup_mysql():
     """Generate a MySQL database backup securely."""
